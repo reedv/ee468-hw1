@@ -116,24 +116,40 @@ void parse_args(char *buffer, char** args,
 /*
  * Currently works onyl for args w/out options and they cannot be seperated
  * by '|' tokens. E.g. "$ ls wc" works, but "$ ls | wc" does not.
+ * Also, exits after a single line of commands (does not loop).
  * */
 void run_commands(int nargs, char *args[]){
-	printf("Entered run_commands\n");
+	#ifdef DEBUG
+		printf("**Entered run_commands\n");
+		// check to see what args have been tokenized
+		printf("nargs=%d\n", nargs);
+		int j;
+		for(j=0; j<nargs; j++){
+			printf("args[%d] = %s\n", j, args[j]);
+		}
+	#endif
 
 	// going thru args from left to right
 	int i;
 	for( i=0; i<nargs-1; i++){  // the very last arg will be eval. outside the loop
+
+	#ifdef DEBUG
+		printf("**In run_commands: loop: i=%d\n", i);
+	#endif
+
 		/*
 		 * In this loop, we continuously a child to eval the next
 		 * arg and pipe the child's stdout to the stdin of the parent,
 		 * which spawns another child to eval this stdin with the next arg,
 		 * and so on up until the very last arg.
 		 * */
+		int *ret_status;
 		int pd[2];
 		pipe(pd);
 
 		// child logic
-		if (!fork()) {
+		int pid = fork();
+		if (!pid) {
 
 			// remap stdout to write to parent
 			dup2(pd[1], 1);
@@ -149,7 +165,25 @@ void run_commands(int nargs, char *args[]){
 		// remap output from child to stdin
 		dup2(pd[0], 0);
 		close(pd[1]);
+
+		#ifdef DEBUG
+			printf("**In run_commands: Waiting for child (%d)\n", pid);
+		#endif
+
+		pid = wait(ret_status);
+		/*
+		 * This is a simplified version of waitpid, and is used to wait
+		 * until any one child process terminates.
+		 */
+		#ifdef DEBUG
+			printf("Child (%d) finished\n", pid);
+		#endif
+
 	}
+
+	#ifdef DEBUG
+		printf("**In run_commands: loop done: i=%d\n", i);
+	#endif
 
 	execlp(args[i], args[i], (char*)NULL);
 
@@ -198,24 +232,24 @@ int main(int argc, char *argv[], char *envp[]){
         printf("pipe_count=%d\n", pipe_count);
 
 #endif
-        run_commands(nargs, args);
-//			pid = fork();  // returns a value of 0 in the child process and returns the
-//						   // child's process ID in the parent process.
-//			if (pid){  /* The parent */
-//	#ifdef DEBUG
-//				printf("Waiting for child (%d)\n", pid);
-//	#endif
-//				pid = wait(ret_status);
-//				/*
-//				 * This is a simplified version of waitpid, and is used to wait
-//				 * until any one child process terminates.
-//				 */
-//	#ifdef DEBUG
-//				printf("Child (%d) finished\n", pid);
-//	#endif
-//			}
-//
-//			else{  /* The child executing the command */
+        //run_commands(nargs, args);
+			pid = fork();  // returns a value of 0 in the child process and returns the
+						   // child's process ID in the parent process.
+			if (pid){  /* The parent */
+	#ifdef DEBUG
+				printf("**In main: Waiting for child (%d)\n", pid);
+	#endif
+				pid = wait(ret_status);
+				/*
+				 * This is a simplified version of waitpid, and is used to wait
+				 * until any one child process terminates.
+				 */
+	#ifdef DEBUG
+				printf("**In main: Child (%d) finished\n", pid);
+	#endif
+			}
+
+			else{  /* The child executing the command */
 //				if( execvp(args[0], args)) {
 //					/*
 //					 * The execvp function is similar to execv, except that it searches the directories
@@ -230,8 +264,9 @@ int main(int argc, char *argv[], char *envp[]){
 //					puts(strerror(errno));
 //					exit(127);
 //			}
-//
-//			}
+				run_commands(nargs, args);
+
+			}
 
     }    
     return 0;
