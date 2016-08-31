@@ -122,22 +122,31 @@ void run_commands(int nargs, char *args[]){
 
 	// going thru args from left to right
 	int i;
-	for( i=0; i<nargs-1; i++)
-	{
+	for( i=0; i<nargs-1; i++){  // the very last arg will be eval. outside the loop
+		/*
+		 * In this loop, we continuously a child to eval the next
+		 * arg and pipe the child's stdout to the stdin of the parent,
+		 * which spawns another child to eval this stdin with the next arg,
+		 * and so on up until the very last arg.
+		 * */
 		int pd[2];
 		pipe(pd);
 
-		if (!fork()) { // child logic
+		// child logic
+		if (!fork()) {
 
-			dup2(pd[1], 1); // remap stdout to write to parent
+			// remap stdout to write to parent
+			dup2(pd[1], 1);
+			close(pd[0]);
 			execlp(args[i], args[i], (char*)NULL);
 
 			perror("exec");
 			abort();
 		}
+
 		// parent logic
 
-		// remap output from previous child to input
+		// remap output from child to stdin
 		dup2(pd[0], 0);
 		close(pd[1]);
 	}
