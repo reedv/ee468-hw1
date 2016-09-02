@@ -141,16 +141,19 @@ void run_commands(int nargs, char *args[]){
 		 * In this loop, we continuously a child to eval the next
 		 * arg and pipe the child's stdout to the stdin of the parent,
 		 * which spawns another child to eval this stdin with the next arg,
-		 * and so on up until the very last arg.
+		 * and so on up until the very last arg (can think of stdin, here, as
+		 * a global buffer of each parent process, and is only being changed
+		 * by the piped outut of the child).
 		 * */
 		int *ret_status;
 		int pd[2];
 		pipe(pd);
 
-		// child logic
 		int pid = fork();
 		if (!pid) {
-
+			/* **************************
+			 * Child Logic
+			 * **************************/
 			// remap stdout to write to parent
 			dup2(pd[1], 1);
 			close(pd[0]);
@@ -160,8 +163,9 @@ void run_commands(int nargs, char *args[]){
 			abort();
 		}
 
-		// parent logic
-
+		/* **************************
+		 * Parent Logic
+		 * **************************/
 		// remap output from child to stdin
 		dup2(pd[0], 0);
 		close(pd[1]);
@@ -194,7 +198,9 @@ void run_commands(int nargs, char *args[]){
 int main(int argc, char *argv[], char *envp[]){
     char buffer[BUFFER_SIZE];
     char *args[ARR_SIZE];
-
+    int i=0,
+    	j=0,
+		k=0;
     int *ret_status;
     size_t nargs;
     pid_t pid;
@@ -207,49 +213,79 @@ int main(int argc, char *argv[], char *envp[]){
         fgets(buffer, BUFFER_SIZE, stdin);
         /* Parse the command line arguments into array args */
         parse_args(buffer, args, ARR_SIZE, &nargs);
-#ifdef DEBUG
-        // check to see what args have been tokenized
-        printf("nargs=%d\n", nargs);
-        int i;
-        for(i=0; i<nargs; i++){
-        	printf("args[%d] = %s\n", i, args[i]);
-        }
-#endif
+		#ifdef DEBUG
+			// check to see what args have been tokenized
+			printf("nargs=%d\n", nargs);
+			for(i=0; i<nargs; i++){
+				printf("args[%d] = %s\n", i, args[i]);
+			}
+		#endif
  
         /* Nothing entered so prompt again */
         if (nargs==0) continue;
         /* special 'exit' command entered, exit shell */
-        if (!strcmp(args[0], "exit" )) exit(0);
+        if (strcmp(args[0], "exit" )==0) exit(0);
 
-        //count number of pipes
+        //Count number of pipes.
         int pipe_count=0;
         for(i=0; i<nargs; i++){
         	if(strcmp(args[i], "|")==0) {
         		pipe_count++;
         	}
         }
-#ifdef DEBUG
-        printf("pipe_count=%d\n", pipe_count);
+		#ifdef DEBUG
+			printf("**In main: pipe_count=%d\n", pipe_count);
+		#endif
 
-#endif
-        //run_commands(nargs, args);
-			pid = fork();  // returns a value of 0 in the child process and returns the
-						   // child's process ID in the parent process.
-			if (pid){  /* The parent */
-	#ifdef DEBUG
-				printf("**In main: Waiting for child (%d)\n", pid);
-	#endif
-				pid = wait(ret_status);
-				/*
-				 * This is a simplified version of waitpid, and is used to wait
-				 * until any one child process terminates.
-				 */
-	#ifdef DEBUG
-				printf("**In main: Child (%d) finished\n", pid);
-	#endif
+        /*
+         * TODO: parse thru args to find '|'s and use these positions to create array of
+         * array of args and thier options. Then can use something like
+         * execvp(args[i][0], args[i]) in run_commands.
+         * */
+		int num_args = pipe_count + 1;
+		int	num_options = nargs - num_args;
+		char *piped_args[num_args][num_options+1]; // piped_args[i][0]=ith arg, piped_args[i][j]=jth option of ith arg
+		/*
+		 * TODO: init.all options of piped_args to be char*(NULL) (or empty strings?); all piped_args[i][j]
+		 * */
+		for(i=0, j=0, k=0; i<nargs; i++){  // Assuming we have already caught empty commands and the first arg is valid
+			if(strcmp(args[i], "|")==0) {
+				j++;
+				k=0;
 			}
+			else {
+				piped_args[j][k] = args[i];
+				k++;
+			}
+		}
 
-			else{  /* The child executing the command */
+		#ifdef DEBUG
+			// check contents of piped_args
+			for(i=0; i<num_args; i++){
+				for(j=0; j<num_options; j++){
+					printf("**In main: piped_args[%d][%d]=%s\n", i, j, piped_args[i][j]);
+				}
+			}
+		#endif
+
+
+		pid = fork();  // returns a value of 0 in the child process and returns the
+					   // child's process ID in the parent process.
+		if (pid){  /* The parent */
+		#ifdef DEBUG
+			printf("**In main: Waiting for child (%d)\n", pid);
+		#endif
+			pid = wait(ret_status);
+			/*
+			 * This is a simplified version of waitpid, and is used to wait
+			 * until any one child process terminates.
+			 */
+		#ifdef DEBUG
+			printf("**In main: Child (%d) finished\n", pid);
+		#endif
+		}
+
+		else{  /* The child executing the command */
 //				if( execvp(args[0], args)) {
 //					/*
 //					 * The execvp function is similar to execv, except that it searches the directories
@@ -260,13 +296,23 @@ int main(int argc, char *argv[], char *envp[]){
 //					 * for them in the places that the user has chosen. Shells use it to run the
 //					 * commands that users type.
 //					 */
+//					/*
+//					 * The  execv(const char *filename, char *const argv[]) function executes the file named
+//			         * by filename as a new process image.
+//                   *
+//					 * The argv argument is an array of null-terminated strings that is used to provide
+//					 * a value for the argv argument to the main function of the program to be executed.
+//					 * The last element of this array must be a null pointer. By convention, the first
+//					 * element of this array is the file name of the program sans directory names. , for full
+//					 * details on how programs can access these arguments.
+//					 */
 //					// notify if errors
 //					puts(strerror(errno));
 //					exit(127);
 //			}
-				run_commands(nargs, args);
+			run_commands(nargs, args);
 
-			}
+		}
 
     }    
     return 0;
