@@ -213,13 +213,13 @@ int main(int argc, char *argv[], char *envp[]){
         fgets(buffer, BUFFER_SIZE, stdin);
         /* Parse the command line arguments into array args */
         parse_args(buffer, args, ARR_SIZE, &nargs);
-		#ifdef DEBUG
+#ifdef DEBUG
 			// check to see what args have been tokenized
 			printf("nargs=%d\n", nargs);
 			for(i=0; i<nargs; i++){
 				printf("args[%d] = %s\n", i, args[i]);
 			}
-		#endif
+#endif
  
         /* Nothing entered so prompt again */
         if (nargs==0) continue;
@@ -233,56 +233,68 @@ int main(int argc, char *argv[], char *envp[]){
         		pipe_count++;
         	}
         }
-		#ifdef DEBUG
+#ifdef DEBUG
 			printf("**In main: pipe_count=%d\n", pipe_count);
-		#endif
+#endif
 
         /*
          * TODO: parse thru args to find '|'s and use these positions to create array of
          * array of args and thier options. Then can use something like
          * execvp(args[i][0], args[i]) in run_commands.
          * */
-		int num_args = pipe_count + 1;
-		int	num_options = nargs - num_args;
-		char *piped_args[num_args][num_options+1]; // piped_args[i][0]=ith arg, piped_args[i][j]=jth option of ith arg
+		int num_args = pipe_count + 1;  // total num of args
+		int	num_options = nargs - num_args - pipe_count + 1;  // +1 since also needs to hold arg of the options
+		char piped_args[num_args][num_options][ARR_SIZE]; // piped_args[i][0]=ith arg, piped_args[i][j>0]=jth option of ith arg
+
+		// init.all strings of piped_args to be char*(NULL) (or empty strings or '\n'?)
+		for(i=0; i<num_args; i++){
+			for(j=0; j<num_options; j++){
+				strcpy(piped_args[i][j], "\0");
+#ifdef DEBUG
+				printf("**In main: piped_args init.: piped_args[%d][%d]=%s\n", i, j, piped_args[i][j]);
+#endif
+			}
+		}
 		/*
-		 * TODO: init.all options of piped_args to be char*(NULL) (or empty strings?); all piped_args[i][j]
+		 * Parse thru args to find '|'s and use these positions to create array of
+         * array of args as well as thier options.
 		 * */
 		for(i=0, j=0, k=0; i<nargs; i++){  // Assuming we have already caught empty commands and the first arg is valid
 			if(strcmp(args[i], "|")==0) {
+				// start next arg and options
 				j++;
 				k=0;
-			}
-			else {
-				piped_args[j][k] = args[i];
+			} else {
+				// add arg or options to indexed array of strings in piped_args
+				strcpy(piped_args[j][k], args[i]);
 				k++;
 			}
 		}
 
-		#ifdef DEBUG
+#ifdef DEBUG
 			// check contents of piped_args
 			for(i=0; i<num_args; i++){
 				for(j=0; j<num_options; j++){
 					printf("**In main: piped_args[%d][%d]=%s\n", i, j, piped_args[i][j]);
 				}
 			}
-		#endif
+#endif
 
 
 		pid = fork();  // returns a value of 0 in the child process and returns the
 					   // child's process ID in the parent process.
 		if (pid){  /* The parent */
-		#ifdef DEBUG
+#ifdef DEBUG
 			printf("**In main: Waiting for child (%d)\n", pid);
-		#endif
+#endif
 			pid = wait(ret_status);
 			/*
 			 * This is a simplified version of waitpid, and is used to wait
 			 * until any one child process terminates.
 			 */
-		#ifdef DEBUG
+#ifdef DEBUG
 			printf("**In main: Child (%d) finished\n", pid);
-		#endif
+#endif
 		}
 
 		else{  /* The child executing the command */
