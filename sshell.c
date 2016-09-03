@@ -214,11 +214,11 @@ int main(int argc, char *argv[], char *envp[]){
         /* Parse the command line arguments into array args */
         parse_args(buffer, args, ARR_SIZE, &nargs);
 #ifdef DEBUG
-		// check to see what args have been tokenized
-		printf("nargs=%d\n", nargs);
-		for(i=0; i<nargs; i++){
-			printf("args[%d] = %s\n", i, args[i]);
-		}
+			// check to see what args have been tokenized
+			printf("nargs=%d\n", nargs);
+			for(i=0; i<nargs; i++){
+				printf("args[%d] = %s\n", i, args[i]);
+			}
 #endif
  
         /* Nothing entered so prompt again */
@@ -234,7 +234,7 @@ int main(int argc, char *argv[], char *envp[]){
         	}
         }
 #ifdef DEBUG
-		printf("**In main: pipe_count=%d\n", pipe_count);
+			printf("**In main: pipe_count=%d\n", pipe_count);
 #endif
 
         /*
@@ -245,7 +245,7 @@ int main(int argc, char *argv[], char *envp[]){
 		int num_args = pipe_count + 1;  // total num of args
 		int	num_options = nargs - num_args - pipe_count + 1;  // +1 since also needs to hold arg of the options
 		char piped_args[num_args][num_options][ARR_SIZE]; // piped_args[i][0]=ith arg, piped_args[i][j>0]=jth option of ith arg
-
+		// TODO: change piped_args to use only ptrs. so can be passed to run_commands
 		// init.all strings of piped_args to be char*(NULL) (or empty strings or '\n'?)
 		for(i=0; i<num_args; i++){
 			for(j=0; j<num_options; j++){
@@ -272,20 +272,18 @@ int main(int argc, char *argv[], char *envp[]){
 		}
 
 #ifdef DEBUG
-			// check contents of piped_args
-			for(i=0; i<num_args; i++){
-				for(j=0; j<num_options; j++){
-					printf("**In main: piped_args[%d][%d]=%s\n", i, j, piped_args[i][j]);
-				}
+		// check contents of piped_args
+		for(i=0; i<num_args; i++){
+			for(j=0; j<num_options; j++){
+				printf("**In main: piped_args[%d][%d]=%s\n", i, j, piped_args[i][j]);
 			}
+		}
 #endif
-
 // This is a TEST ---------------------------------------------
 
 		// going thru args from left to right
 		int i;
 		for( i=0; i<nargs-1; i++){  // the very last arg will be eval. outside the loop
-
 #ifdef DEBUG
 			printf("**In run_commands: loop: i=%d\n", i);
 #endif
@@ -350,17 +348,17 @@ int main(int argc, char *argv[], char *envp[]){
 //		pid = fork();  // returns a value of 0 in the child process and returns the
 //					   // child's process ID in the parent process.
 //		if (pid){  /* The parent */
-//		#ifdef DEBUG
+//#ifdef DEBUG
 //			printf("**In main: Waiting for child (%d)\n", pid);
-//		#endif
+//#endif
 //			pid = wait(ret_status);
 //			/*
 //			 * This is a simplified version of waitpid, and is used to wait
 //			 * until any one child process terminates.
 //			 */
-//		#ifdef DEBUG
+//#ifdef DEBUG
 //			printf("**In main: Child (%d) finished\n", pid);
-//		#endif
+//#endif
 //		}
 //
 //		else{  /* The child executing the command */
@@ -389,9 +387,10 @@ int main(int argc, char *argv[], char *envp[]){
 ////					exit(127);
 ////			}
 //			run_commands(nargs, args);
-	}
+//		}
 
-   return 0;
+    }
+    return 0;
 }
 
 
