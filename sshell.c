@@ -268,49 +268,115 @@ int main(int argc, char *argv[], char *envp[]){
 			}
 		#endif
 
+// This is a TEST ---------------------------------------------
 
-		pid = fork();  // returns a value of 0 in the child process and returns the
-					   // child's process ID in the parent process.
-		if (pid){  /* The parent */
-		#ifdef DEBUG
-			printf("**In main: Waiting for child (%d)\n", pid);
-		#endif
+		// going thru args from left to right
+		int i;
+		for( i=0; i<nargs-1; i++){  // the very last arg will be eval. outside the loop
+
+	#ifdef DEBUG
+			printf("**In run_commands: loop: i=%d\n", i);
+	#endif
+
+			/*
+			 * In this loop, we continuously a child to eval the next
+			 * arg and pipe the child's stdout to the stdin of the parent,
+			 * which spawns another child to eval this stdin with the next arg,
+			 * and so on up until the very last arg (can think of stdin, here, as
+			 * a global buffer of each parent process, and is only being changed
+			 * by the piped outut of the child).
+			 * */
+			int *ret_status;
+			int pd[2];
+			pipe(pd);
+
+			int pid = fork();
+			if (!pid) {
+				/* **************************
+				 * Child Logic
+				 * **************************/
+				// remap stdout to write to parent
+				dup2(pd[1], 1);
+				close(pd[0]);
+				execlp(args[i], args[i], (char*)NULL);
+
+				perror("exec");
+				abort();
+			}
+
+			/* **************************
+			 * Parent Logic
+			 * **************************/
+			// remap output from child to stdin
+			dup2(pd[0], 0);
+			close(pd[1]);
+
+	#ifdef DEBUG
+			printf("**In run_commands: Waiting for child (%d)\n", pid);
+	#endif
 			pid = wait(ret_status);
 			/*
 			 * This is a simplified version of waitpid, and is used to wait
 			 * until any one child process terminates.
 			 */
-		#ifdef DEBUG
-			printf("**In main: Child (%d) finished\n", pid);
-		#endif
+	#ifdef DEBUG
+			printf("**IN run_commands: Child (%d) finished\n", pid);
+	#endif
 		}
+#ifdef DEBUG
+		printf("**In run_commands: loop done: i=%d\n", i);
+#endif
 
-		else{  /* The child executing the command */
-//				if( execvp(args[0], args)) {
-//					/*
-//					 * The execvp function is similar to execv, except that it searches the directories
-//					 * listed in the PATH environment variable to find the full file name of a file
-//					 * from filename if filename does not contain a slash.
-//					 *
-//					 * This function is useful for executing system utility programs, because it looks
-//					 * for them in the places that the user has chosen. Shells use it to run the
-//					 * commands that users type.
-//					 */
-//					/*
-//					 * The  execv(const char *filename, char *const argv[]) function executes the file named
-//			         * by filename as a new process image.
-//                   *
-//					 * The argv argument is an array of null-terminated strings that is used to provide
-//					 * a value for the argv argument to the main function of the program to be executed.
-//					 * The last element of this array must be a null pointer. By convention, the first
-//					 * element of this array is the file name of the program sans directory names. , for full
-//					 * details on how programs can access these arguments.
-//					 */
-//					// notify if errors
-//					puts(strerror(errno));
-//					exit(127);
-//			}
-			run_commands(nargs, args);
+		execlp(args[i], args[i], (char*)NULL);
+
+		perror("exec");
+		abort();
+
+// END TEST ------------------------------------
+
+
+//		pid = fork();  // returns a value of 0 in the child process and returns the
+//					   // child's process ID in the parent process.
+//		if (pid){  /* The parent */
+//		#ifdef DEBUG
+//			printf("**In main: Waiting for child (%d)\n", pid);
+//		#endif
+//			pid = wait(ret_status);
+//			/*
+//			 * This is a simplified version of waitpid, and is used to wait
+//			 * until any one child process terminates.
+//			 */
+//		#ifdef DEBUG
+//			printf("**In main: Child (%d) finished\n", pid);
+//		#endif
+//		}
+//
+//		else{  /* The child executing the command */
+////				if( execvp(args[0], args)) {
+////					/*
+////					 * The execvp function is similar to execv, except that it searches the directories
+////					 * listed in the PATH environment variable to find the full file name of a file
+////					 * from filename if filename does not contain a slash.
+////					 *
+////					 * This function is useful for executing system utility programs, because it looks
+////					 * for them in the places that the user has chosen. Shells use it to run the
+////					 * commands that users type.
+////					 */
+////					/*
+////					 * The  execv(const char *filename, char *const argv[]) function executes the file named
+////			         * by filename as a new process image.
+////                   *
+////					 * The argv argument is an array of null-terminated strings that is used to provide
+////					 * a value for the argv argument to the main function of the program to be executed.
+////					 * The last element of this array must be a null pointer. By convention, the first
+////					 * element of this array is the file name of the program sans directory names. , for full
+////					 * details on how programs can access these arguments.
+////					 */
+////					// notify if errors
+////					puts(strerror(errno));
+////					exit(127);
+////			}
+//			run_commands(nargs, args);
 
 		}
 
