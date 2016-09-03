@@ -245,7 +245,7 @@ int main(int argc, char *argv[], char *envp[]){
 		int num_args = pipe_count + 1;  // total num of args
 		int	num_options = nargs - num_args - pipe_count + 1;  // +1 since also needs to hold arg of the options
 		char piped_args[num_args][num_options][ARR_SIZE]; // piped_args[i][0]=ith arg, piped_args[i][j>0]=jth option of ith arg
-
+		// TODO: change piped_args to use only ptrs. so can be passed to run_commands
 		// init.all strings of piped_args to be char*(NULL) (or empty strings or '\n'?)
 		for(i=0; i<num_args; i++){
 			for(j=0; j<num_options; j++){
