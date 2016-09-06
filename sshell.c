@@ -267,7 +267,7 @@ int main(int argc, char *argv[], char *envp[]){
 							// remap stdout of this child to write to stdin of parent
 							dup2(pd[1], 1);
 							close(pd[0]);
-							execvp(&args[i][0], &args[i]);
+							execvp(piped_args[i][0], &piped_args[i][0]);
 
 							perror("exec");
 							abort();
@@ -298,7 +298,7 @@ int main(int argc, char *argv[], char *envp[]){
 					printf("**In run_commands: piped_args[%d][0] = %s\n", i, piped_args[i][0]);
 #endif
 
-					execvp(&args[i][0], &args[i]);
+					execvp(piped_args[i][0], &piped_args[i][0]);
 
 					perror("exec");
 					abort();
