@@ -264,7 +264,7 @@ int main(int argc, char *argv[], char *envp[]){
 							/* **************************
 							 * Child Logic
 							 * **************************/
-							// remap stdout to write to parent
+							// remap stdout of this child to write to stdin of parent
 							dup2(pd[1], 1);
 							close(pd[0]);
 							execvp(&args[i][0], &args[i]);
@@ -276,7 +276,7 @@ int main(int argc, char *argv[], char *envp[]){
 						/* **************************
 						 * Parent Logic
 						 * **************************/
-						// remap output from child to stdin
+						// remap stdout of child to write to stdin of this parent
 						dup2(pd[0], 0);
 						close(pd[1]);
 
