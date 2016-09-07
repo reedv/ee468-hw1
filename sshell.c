@@ -116,11 +116,11 @@ void parse_args(char *buffer, char** args,
 }
 
 
-
+// TODO: refactor and strip down commented code
 /*
 * Method for launching a program.
 */
-void launchProg(char **args, int background){
+void commandRunner(char **args){
 	 int err = -1;
 
 	 if((pid=fork()) == -1){
@@ -136,12 +136,9 @@ void launchProg(char **args, int background){
 		// process to handle them with signalHandler_int)
 		signal(SIGINT, SIG_IGN);
 
-		// We set parent=<pathname>/simple-c-shell as an environment variable
-		// for the child
-		//setenv("parent",getcwd(currentDirectory, 1024),1);
 
-		// If we launch non-existing commands we end the process
-		if (execvp(args[0],args) == err){
+		if (execvp(args[0], args) == err){
+			// If launch non-existing commands, end process
 			printf("Command not found");
 			kill(getpid(),SIGTERM);
 		}
@@ -150,17 +147,11 @@ void launchProg(char **args, int background){
 	 /************************************
 	 * Parent Logic
 	 * **********************************/
-	 // If the process is not requested to be in background, we wait for
-	 // the child to finish.
-	 if (background == 0){
-		 waitpid(pid, NULL, 0);
-	 }else{
-		 // In order to create a background process, the current process
-		 // should just skip the call to wait. The SIGCHILD handler
-		 // signalHandler_child will take care of the returning values
-		 // of the childs.
+	 // Wait for child to finish.
+#ifdef DEBUG
 		 printf("Process created with PID: %d\n",pid);
-	 }
+#endif
+		 waitpid(pid, NULL, 0);
 }
 
 
@@ -313,15 +304,8 @@ int commandHandler(char * args[]){
 	int i = 0;
 	int j = 0;
 
-	int fileDescriptor;
-	int standardOut;
-
-	int aux;
 	int background = 0;
 
-	// TODO: comment out unneeded conditionals to see if we can get MINIMAL functionality (just pipes)
-	// 		 Only keep the pieces you can understand and dont keep anything beyond single basic commands
-	//       (with options) and pipes (|).
 	// 'exit' command quits the shell
 	if(strcmp(args[0],"exit") == 0) exit(0);
  	// 'clear' command clears the screen
@@ -343,17 +327,7 @@ int commandHandler(char * args[]){
 		}
 		// We launch the program with our method, indicating if we
 		// want background execution or not
-		launchProg(args,background);
-
-		/**
-		 * For the part 1.e, we only had to print the input that was not
-		 * 'exit', 'pwd' or 'clear'. We did it the following way
-		 */
-		//	i = 0;
-		//	while(args[i]!=NULL){
-		//		printf("%s\n", args[i]);
-		//		i++;
-		//	}
+		commandRunner(args);
 	}
 return 1;
 }
