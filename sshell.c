@@ -319,17 +319,6 @@ int commandHandler(char * args[]){
 	int aux;
 	int background = 0;
 
-	char *args_aux[256];
-
-	// We look for the special characters and separate the command itself
-	// in a new array for the arguments
-	while ( args[j] != NULL){
-		if ( (strcmp(args[j],">") == 0) || (strcmp(args[j],"<") == 0) || (strcmp(args[j],"&") == 0)){
-			break;
-		}
-		args_aux[j] = args[j];
-		j++;
-	}
 	// TODO: comment out unneeded conditionals to see if we can get MINIMAL functionality (just pipes)
 	// 		 Only keep the pieces you can understand and dont keep anything beyond single basic commands
 	//       (with options) and pipes (|).
@@ -354,7 +343,7 @@ int commandHandler(char * args[]){
 		}
 		// We launch the program with our method, indicating if we
 		// want background execution or not
-		launchProg(args,background); //TODO: replace arg_aux with args from main(?) and remove arg_aux loop
+		launchProg(args,background);
 
 		/**
 		 * For the part 1.e, we only had to print the input that was not
