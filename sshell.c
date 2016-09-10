@@ -116,7 +116,6 @@ void parse_args(char *buffer, char** args,
 }
 
 
-// TODO: refactor and strip down commented code
 /*
 * Method for launching a program.
 */
@@ -168,9 +167,9 @@ void commandRunner(char **args){
 	 * **********************************/
 	 // Wait for child to finish.
 #ifdef DEBUG
-		 printf("Process created with PID: %d\n",pid);
+	 printf("Process created with PID: %d\n",pid);
 #endif
-		 waitpid(pid, NULL, 0);
+	 waitpid(pid, NULL, 0);
 }
 
 
@@ -254,10 +253,10 @@ void pipeHandler(char * args[]){
 
 		if(pid==err){
 			if (i != num_cmds - 1){
-				// for odd i
+				// odd i
 				if (i % 2 != 0){
 					close(filedes[WRITE]);
-				// for even i
+				// even i
 				}else{
 					close(filedes2[WRITE]);
 				}
@@ -274,7 +273,7 @@ void pipeHandler(char * args[]){
 				/*This function copies the descriptor old to descriptor number new.*/
 				dup2(filedes2[WRITE], STDOUT_FILENO);
 			}
-			// If we are in the last command, depending on whether it
+			// If processing last command, depending on whether it
 			// is placed in an odd or even position, replace
 			// the standard input for one pipe or another.
 			// Don't change stdout, since want to see output in terminal
