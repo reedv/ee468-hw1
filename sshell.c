@@ -289,12 +289,12 @@ void pipeHandler(char * args[]){
 			// output. The position is also important in order to choose
 			// which file descriptor corresponds to each input/output
 
-		    // for odd i
+		    	// odd i
 			}else{
 				if (i % 2 != 0){
 					dup2(filedes2[READ], STDIN_FILENO);
 					dup2(filedes[WRITE], STDOUT_FILENO);
-				}else{ // for even i
+				}else{ // even i
 					dup2(filedes[READ], STDIN_FILENO);
 					dup2(filedes2[WRITE], STDOUT_FILENO);
 				}
