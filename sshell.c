@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #define BUFFER_SIZE 80  // Includes the space for terminating null
 #define ARR_SIZE 80
@@ -208,7 +210,7 @@ void pipeHandler(char * args[]){
 		l++;
 	}
 	num_cmds++;
-	const last_cmd_index = num_cmds-1;
+	const int last_cmd_index = num_cmds-1;
 
 	// For each command between '|', configure pipes and set input/output.
 	// Then execute
@@ -301,6 +303,9 @@ void pipeHandler(char * args[]){
 			}
 
 			if (execvp(command[0],command)==err){
+#ifdef DEBUG
+				printf("**In pipeHandler: execvp err\n");
+#endif
 				kill(getpid(), SIGTERM);
 			}
 		}
